@@ -2,9 +2,7 @@ const express     = require('express');
 const userRouter  = express.Router();
 const User        = require('../models/User');
 const bcrypt      = require('bcryptjs');
-
-
-
+const passport    = require('passport');
 
 
 userRouter.get("/signup", (req, res, next)=>{
@@ -43,51 +41,57 @@ userRouter.post("/signup", (req, res, next)=>{
 });
 
 userRouter.get('/login', (req, res, next)=>{
-  res.render("userViews/loginPage");
+  res.render("userViews/loginPage", {"message": req.flash("error")});
 });
 
-userRouter.post('/login', (req, res, next)=>{
-  const theUsername = req.body.theUsername;
-  const thePassword = req.body.thePassword;
-  if( theUsername === "" || thePassword === ""){
-    res.render('userViews/loginPage', {errorMessage: "You need a username or password to login"});
-    return;
-  }
-  User.findOne({"username": theUsername}, (err, user) =>{
-    if (err || !user){
-      res.render("userViews/loginPage", {errorMessage: "sorry that user name does not exist."});
-      return;
-    }
-    if(bcrypt.compareSync(thePassword, user.password)){
-      req.session.currentUser = user;
-      res.redirect("/");
-    } else {
-      res.render("userViews/loginPage", {errorMessage: "Incorrect Password Entered"});
-    }
-  });
-});
-
-userRouter.use((req, res, next)=>{
-  if(req.session.currentUser) {
-    next();
-  } else {
-    res.redirect('/login');
-  }
-});
-
-userRouter.get('/main', (req, res, next)=>{
-  res.render("userViews/mainPage");
-});
+userRouter.post('/login', passport.authenticate("local", {
+  successRedirect: "/", //sends to home page if it worked
+  failureRedirect: "/login",
+  failureFlash: true,
+  passReqToCallback: true
+}));
+  // const theUsername = req.body.theUsername;
+  // const thePassword = req.body.thePassword;
+  // if( theUsername === "" || thePassword === ""){
+  //   res.render('userViews/loginPage', {errorMessage: "You need a username or password to login"});
+  //   return;
+  // }
+  // User.findOne({"username": theUsername}, (err, user) =>{
+  //   if (err || !user){
+  //     res.render("userViews/loginPage", {errorMessage: "sorry that user name does not exist."});
+  //     return;
+  //   }
+  //   if(bcrypt.compareSync(thePassword, user.password)){
+  //     req.session.currentUser = user;
+  //     res.redirect("/");
+  //   } else {
+  //     res.render("userViews/loginPage", {errorMessage: "Incorrect Password Entered"});
+  //   }
+  // });
 
 
-userRouter.get('/private', (req, res, next)=>{
-  res.render('userViews/privatePage');
-});
+// userRouter.use((req, res, next)=>{
+//   if(req.session.currentUser) {
+//     next();
+//   } else {
+//     res.redirect('/login');
+//   }
+// });
 
+// userRouter.get('/main', (req, res, next)=>{
+//   res.render("userViews/mainPage");
+// });
+//
+//
+// userRouter.get('/private', (req, res, next)=>{
+//   res.render('userViews/privatePage');
+// });
+
+ 
 userRouter.get('/logout', (req, res, next)=>{
-  req.session.destroy((err)=>{
+    req.logout();
     res.redirect("/login");
-  });
+
 });
 
 module.exports = userRouter;

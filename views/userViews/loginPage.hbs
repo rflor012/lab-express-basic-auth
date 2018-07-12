@@ -8,7 +8,7 @@
     <label for="password">Password</label>
     <input id="password" type="password" name="thePassword"/>
 
-    <button>Submit</button>
+    <button type="submit">Log in</button>
   </form>
 
 {{#if errorMessage}}
@@ -16,3 +16,11 @@
   {{errorMessage}}
 </div>
 {{/if}}
+
+<h2>Show me Some Pokemon!</h2>
+<input type="text" id="poke-input"/>
+<button id="poke-button">Get the Pocket Monster!</button>
+<div id="poke-info">
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+</div>

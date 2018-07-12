@@ -9,9 +9,17 @@ const mongoose     = require('mongoose');
 const logger       = require('morgan');
 const path         = require('path');
 const session      = require('express-session');
+const bcrypt       = require("bcryptjs");
+const passport     = require('passport');
+const LocalStrategy= require('passport-local').Strategy;
 const MongoStore   = require('connect-mongo')(session);
+const flash        = require('connect-flash');
+const ensureLogin  = require('connect-ensure-login');
 const app = express();
 
+const User = require('./models/User');
+
+app.locals.title = 'Basic User Authentication - Mess up here so you dont in real life!';
 
 
 mongoose.Promise = Promise;
@@ -49,19 +57,47 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(favicon(path.join(__dirname, 'public', 'images', 'favicon.ico')));
 
 app.use(session({
-  secret: "basic-auth-secret",
-  cookie: {maxAge: 60000},
-  store: new MongoStore({
-    mongooseConnection: mongoose.connection,
-    ttl: 24 * 60 * 60
-  })
+  secret: "our-passport-local-strategy-app",
+  resave: true,
+  saveUninitialized: true
+  //this comes with a warning, these can be finicky so beware, its spooky
+}));
+
+passport.serializeUser((user, cb) => {
+  cb(null, user._id);
+});
+
+passport.deserializeUser((id, cb) => {
+  User.findById(id, (err, user) => {
+    if (err) {return cb(err);}
+    cb(null, user);
+  });
+});
+
+app.use(flash());
+
+passport.use(new LocalStrategy((username, password, next)=> {
+  USer.findOne({username}, (err, user) =>{
+    if (err) {
+      return next(err);
+    }
+    if (!user) {
+      return next(null, false, { message: "Incorrect username"});
+    }
+    if (!bcryp.compareSync(password, user.password)) {
+      return next(null, false, { message: "Incorrect password"});
+    }
+
+    return next(null, user);
+  });
 }));
 
 
 
 // default value for title local
-app.locals.title = 'Express - Generated with IronGenerator';
 
+app.use(passport.initialize());
+app.use(passport.session());
 
 
 const index = require('./routes/index');
@@ -69,5 +105,6 @@ app.use('/', index);
 
 const authRoutes = require('./routes/authRoutes');
 app.use('/', authRoutes);
+
 
 module.exports = app;
